@@ -10,7 +10,7 @@ import java.io._
 object Photo {
 
   def fetch(url: String) = {
-    val in = new URL(url).openStream;
+    val in = new URL(url).openStream
     org.apache.commons.io.IOUtils.toString( in )
   }
   
@@ -18,20 +18,23 @@ object Photo {
       
       val w = width.toString
 
-      val file = new java.io.FileOutputStream("/tmp/foo.png")
+      val file = new java.io.FileOutputStream("/tmp/foo-1.png")
 
       // The first hypen is a reference to STDIN, the `png:-` is a reference to STDOUT, E.g. convert -strip -resize 100 - png:-
-      val pb = Process("convert -strip -resize " + w + " uk.jpg png:-")
+      val pb = Process("convert -strip -resize " + w + " - png:-")
 
-      val body = fetch(url)
+      val image = fetch(url)
 
       val processIO = new ProcessIO(
-            stdin => (), // TODO body getBytes "UTF-8"
+            stdin => {
+              stdin.write(image.getBytes); stdin.close
+            },
             stdout => org.apache.commons.io.IOUtils.copy(stdout, file),
-            stderr => scala.io.Source.fromInputStream(stderr).getLines.foreach(println))
+            stderr => scala.io.Source.fromInputStream(stderr).getLines.foreach(println)
+      )
 
       pb run processIO exitValue
-    
+
   }
 
 }
