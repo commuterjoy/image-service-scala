@@ -14,13 +14,12 @@ object Photo {
     org.apache.commons.io.IOUtils.toString( in )
   }
   
-  def resize(url: String, width: Int) = {
+  def resize(url: String, width: Int, toFile: Boolean) = {
       
       val w = width.toString
 
-      val file = new java.io.FileOutputStream("/tmp/foo-1.png")
-
-      // The first hypen is a reference to STDIN, the `png:-` is a reference to STDOUT, E.g. convert -strip -resize 100 - png:-
+      // The first hypen is a reference to STDIN, the `png:-` is a reference
+      // to STDOUT, E.g. convert -strip -resize 100 - png:-
       val pb = Process("convert -strip -resize " + w + " - png:-")
 
       val image = fetch(url)
@@ -29,7 +28,18 @@ object Photo {
             stdin => {
               stdin.write(image.getBytes); stdin.close
             },
-            stdout => org.apache.commons.io.IOUtils.copy(stdout, file),
+            stdout => {
+              toFile match {
+                case true => {
+                  val file = new java.io.FileOutputStream("/tmp/foo-1.png")
+                  org.apache.commons.io.IOUtils.copy(stdout, file)
+                }
+                case _ => {
+                  scala.io.Source.fromInputStream(stdout).getLines.foreach(println)
+                }
+              }
+
+            },
             stderr => scala.io.Source.fromInputStream(stderr).getLines.foreach(println)
       )
 
@@ -39,4 +49,4 @@ object Photo {
 
 }
 
-println(Photo.resize("http://localhost:4567/uk.jpg", 200))
+println(Photo.resize("http://localhost:4567/uk.jpg", 200, false))
